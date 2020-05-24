@@ -1,8 +1,8 @@
 const router = require ('express').Router();
-var dbFile = require ('../../db/db.json');
+const dbFile = require ('../../db/db.json');
 const fs = require ('fs');
 const path = require("path");
-const { readLocalFile, validateNotes, validJSON } = require('../../lib/notes');
+const { validateNotes, validJSON, getNotesById, getDeleteIndex } = require('../../lib/notes');
 
 //Route to post data to existing notes.
 router.post('/notes', (req,res)=>{
@@ -18,25 +18,24 @@ router.post('/notes', (req,res)=>{
 
  //Delete data by ID
 router.delete('/notes/:id', (req,res)=>{
-    const newArr = [];
-    for (var i =0; i < dbFile.length; i++){
-        if (dbFile[i].id != req.params.id){
-           newArr.push(dbFile[i]);
-        }
+    const index = getDeleteIndex(req.params.id,dbFile);
+    if (index != null) {
+        dbFile.splice(index, 1);
+        fs.writeFileSync(path.join(__dirname,'../../db/db.json'), JSON.stringify(dbFile));
+        res.status('200').send("Successfully deleted");
+    }else {
+        res.status('200').send("No item to delete");
     }
-    dbFile = newArr;
-    fs.writeFileSync(path.join(__dirname,'../../db/db.json'), JSON.stringify(newArr));
-    res.status('200').send("Successfully deleted");
 });
 
  //Get data by ID
 router.get('/notes/:id', (req,res)=>{
-     for (var i =0; i < dbFile.length; i++){
-         if (dbFile[i].id === req.params.id){
-            const selectArr = dbFile[i];
-            res.json(selectArr);
-         }
-     }
+    const result = getNotesById(req.params.id, dbFile);
+    if (result) {
+        res.json(result);
+        } else {
+            res.send(404);
+        }
  });
 
 //Route to fetch all Notes
