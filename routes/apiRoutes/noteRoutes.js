@@ -2,11 +2,11 @@ const router = require ('express').Router();
 const dbFile = require ('../../db/db.json');
 const fs = require ('fs');
 const path = require("path");
-const { validateNotes, validJSON, getNotesById, getDeleteIndex } = require('../../lib/notes');
+const { validateNotes, getNotesById, getDeleteIndex, getUniqueId } = require('../../lib/notes');
 
 //Route to post data to existing notes.
 router.post('/notes', (req,res)=>{
-    req.body.id = dbFile.length.toString();
+    req.body.id = getUniqueId(dbFile);
     if (!validateNotes(req.body)){
         res.status(400).send('The note is not properly formatted.');
     } else {
@@ -22,7 +22,7 @@ router.delete('/notes/:id', (req,res)=>{
     if (index != null) {
         dbFile.splice(index, 1);
         fs.writeFileSync(path.join(__dirname,'../../db/db.json'), JSON.stringify(dbFile));
-        res.status('200').send("Successfully deleted");
+        res.json(dbFile);
     }else {
         res.status('200').send("No item to delete");
     }
